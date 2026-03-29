@@ -1,0 +1,38 @@
+-- ============================================================
+-- SparkBid Seed Data — sample projects for testing
+-- Run AFTER schema.sql, and after creating at least one GC account
+-- Replace 'YOUR_GC_USER_ID' with a real UUID from your profiles table
+-- ============================================================
+
+-- INSERT INTO public.projects (gc_id, title, description, scope_of_work, location, project_type, budget_min, budget_max, bid_deadline, square_footage, stories, status, tags)
+-- VALUES
+--   (
+--     'YOUR_GC_USER_ID',
+--     'Office Building Rewiring',
+--     'Complete electrical rewiring of a 3-story commercial office building.',
+--     'Full rewiring of 45,000 sq ft office building. Panel upgrades (400A service), LED retrofit throughout, fire alarm system integration, code compliance throughout.',
+--     'Albany, NY',
+--     'commercial',
+--     45000,
+--     65000,
+--     '2026-04-15',
+--     45000,
+--     3,
+--     'open',
+--     ARRAY['Rewiring', 'Panel Upgrade', 'LED', 'Fire Alarm']
+--   ),
+--   (
+--     'YOUR_GC_USER_ID',
+--     'Solar + Battery Install',
+--     'Residential solar panel installation with battery backup system.',
+--     '40-panel solar array installation, 2x Tesla Powerwall battery backup, main panel upgrade to 200A, interconnection with utility.',
+--     'Westchester, NY',
+--     'residential',
+--     18000,
+--     25000,
+--     '2026-04-30',
+--     2800,
+--     1,
+--     'open',
+--     ARRAY['Solar', 'Battery Storage', 'Panel Upgrade']
+--   );
