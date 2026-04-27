@@ -73,6 +73,8 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
 
+  const [saveError, setSaveError] = useState("");
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -89,6 +91,27 @@ export default function SettingsPage() {
 
       setRole(profile?.role ?? "ec");
       setFullName(profile?.full_name ?? "");
+
+      // Load notification prefs from the API (honors RLS).
+      try {
+        const res = await fetch("/api/user-settings");
+        if (res.ok) {
+          const { settings } = await res.json();
+          if (settings) {
+            setNotifications({
+              new_projects: settings.new_projects ?? true,
+              bid_updates:  settings.bid_updates  ?? true,
+              new_bids:     settings.new_bids     ?? true,
+              bid_deadline: settings.bid_deadline ?? true,
+              messages:     settings.messages     ?? true,
+              marketing:    settings.marketing    ?? false,
+            });
+          }
+        }
+      } catch (_err) {
+        // Ignore — page still renders with defaults.
+      }
+
       setLoading(false);
     }
     load();
@@ -96,18 +119,31 @@ export default function SettingsPage() {
 
   function toggleNotification(id) {
     setNotifications((prev) => ({ ...prev, [id]: !prev[id] }));
-    // Flash saved indicator
+    // Clear saved indicator when they change again.
     setSaved(false);
+    setSaveError("");
   }
 
   async function saveNotifications() {
     setSaving(true);
-    // In a full app you'd persist these to the DB
-    // For now we'll just show the saved state
-    await new Promise((r) => setTimeout(r, 600));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaveError("");
+    try {
+      const res = await fetch("/api/user-settings", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(notifications),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "Save failed");
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setSaveError(e.message ?? "Save failed");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handlePasswordChange(e) {
@@ -147,26 +183,26 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="text-3xl animate-pulse">⚡</div>
+      <div className="max-w-2xl mx-auto px-6 md:px-8 py-20 text-center text-sm text-slate-500">
+        Loading…
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-20">
-      {/* Header */}
-      <header className="bg-[#0F2B46] px-4 py-4 flex items-center gap-3">
-        <button onClick={() => router.push("/profile")} className="text-slate-400 font-semibold text-sm">
-          ← Back
+    <div className="max-w-2xl mx-auto px-6 md:px-8 py-8">
+      <div className="mb-6">
+        <button onClick={() => router.push("/profile")} className="text-sm text-slate-500 hover:text-slate-900">
+          ← Back to profile
         </button>
-        <span className="font-display font-black text-white text-lg">Settings</span>
-      </header>
+        <h1 className="text-2xl font-bold text-slate-900 mt-2">Settings</h1>
+        <p className="text-sm text-slate-500">Account, notifications, and preferences.</p>
+      </div>
 
-      <div className="px-4 pt-5 max-w-lg mx-auto space-y-5">
+      <div className="space-y-5">
 
         {/* ── Account ── */}
-        <div className="bg-white rounded-2xl overflow-hidden">
+        <div className="card overflow-hidden">
           <p className="text-xs font-black text-slate-400 tracking-wide px-5 pt-5 pb-3">ACCOUNT</p>
 
           {/* User info */}
@@ -254,7 +290,7 @@ export default function SettingsPage() {
         </div>
 
         {/* ── Notifications ── */}
-        <div className="bg-white rounded-2xl overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
             <p className="text-xs font-black text-slate-400 tracking-wide">NOTIFICATIONS</p>
             <button
@@ -269,6 +305,12 @@ export default function SettingsPage() {
               {saving ? "Saving..." : saved ? "✅ Saved" : "Save"}
             </button>
           </div>
+
+          {saveError && (
+            <div className="mx-5 mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {saveError}
+            </div>
+          )}
 
           <div className="divide-y divide-slate-100">
             {visibleNotifications.map((n) => (
@@ -297,7 +339,7 @@ export default function SettingsPage() {
         </div>
 
         {/* ── App Preferences ── */}
-        <div className="bg-white rounded-2xl overflow-hidden">
+        <div className="card overflow-hidden">
           <p className="text-xs font-black text-slate-400 tracking-wide px-5 pt-5 pb-3">APP</p>
           <div className="divide-y divide-slate-100">
             {[
@@ -324,8 +366,8 @@ export default function SettingsPage() {
         </div>
 
         {/* ── Danger Zone ── */}
-        <div className="bg-white rounded-2xl p-5 space-y-3">
-          <p className="text-xs font-black text-slate-400 tracking-wide">ACCOUNT ACTIONS</p>
+        <div className="card p-5 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account actions</p>
           <LogoutButton />
           <button
             onClick={() => {

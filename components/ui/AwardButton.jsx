@@ -15,7 +15,6 @@ export default function AwardButton({ bidId, projectId, contractorName, amount }
     setError("");
     const supabase = createClient();
 
-    // Mark this bid as awarded
     const { error: bidError } = await supabase
       .from("bids")
       .update({ status: "awarded" })
@@ -27,27 +26,30 @@ export default function AwardButton({ bidId, projectId, contractorName, amount }
       return;
     }
 
-    // Mark all other bids on this project as declined
     await supabase
       .from("bids")
       .update({ status: "declined" })
       .eq("project_id", projectId)
       .neq("id", bidId);
 
-    // Mark project as awarded
     await supabase
       .from("projects")
       .update({ status: "awarded" })
       .eq("id", projectId);
+
+    // Fire-and-forget: notify the winning EC.
+    fetch("/api/notifications/bid-awarded", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bidId }),
+    }).catch((e) => console.warn("Notification dispatch failed:", e));
 
     router.refresh();
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3">
-        {error}
-      </div>
+      <div className="card p-3 bg-red-50 border-red-100 text-sm text-red-700">{error}</div>
     );
   }
 
@@ -55,34 +57,35 @@ export default function AwardButton({ bidId, projectId, contractorName, amount }
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="w-full bg-green-600 text-white font-black py-3 rounded-xl hover:bg-green-700 transition-colors text-sm"
+        className="btn w-full bg-green-600 hover:bg-green-700 text-white"
       >
-        🏆 Award Job
+        Award job
       </button>
     );
   }
 
   return (
-    <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-3">
-      <p className="text-green-800 font-bold text-sm text-center">
-        Award this job to <strong>{contractorName}</strong> for <strong>${amount.toLocaleString()}</strong>?
+    <div className="card p-4 bg-green-50 border-green-100 space-y-3">
+      <p className="text-sm text-green-800 text-center">
+        Award this job to <strong>{contractorName}</strong> for{" "}
+        <strong className="tabular-nums">${amount.toLocaleString()}</strong>?
       </p>
-      <p className="text-green-700 text-xs text-center">
+      <p className="text-xs text-green-700 text-center">
         All other bids will be declined. This cannot be undone.
       </p>
       <div className="flex gap-2">
         <button
           onClick={() => setConfirming(false)}
-          className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm hover:bg-slate-50 transition-colors"
+          className="btn btn-secondary flex-1"
         >
           Cancel
         </button>
         <button
           onClick={handleAward}
           disabled={loading}
-          className="flex-1 bg-green-600 text-white font-black py-2.5 rounded-xl text-sm hover:bg-green-700 transition-colors disabled:opacity-60"
+          className="btn flex-1 bg-green-600 hover:bg-green-700 text-white"
         >
-          {loading ? "Awarding..." : "✅ Confirm Award"}
+          {loading ? "Awarding…" : "Confirm award"}
         </button>
       </div>
     </div>

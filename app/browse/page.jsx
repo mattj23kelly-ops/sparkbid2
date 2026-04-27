@@ -1,21 +1,15 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Header from "@/components/ui/Header";
-import NavBar from "@/components/ui/NavBar";
 import ProjectCard from "@/components/ui/ProjectCard";
+import PageHeader from "@/components/ui/PageHeader";
 
-const FILTERS = ["All", "Commercial", "Residential", "Industrial", "Institutional"];
+const FILTERS = ["all", "commercial", "residential", "industrial", "institutional"];
 
 export default async function BrowsePage({ searchParams }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
 
   const typeFilter = searchParams?.type?.toLowerCase();
 
@@ -32,63 +26,52 @@ export default async function BrowsePage({ searchParams }) {
   const { data: projects } = await query;
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-24">
-      <Header title="Browse Projects" />
+    <div className="max-w-6xl mx-auto px-6 md:px-8 py-8">
+      <PageHeader
+        title="Browse projects"
+        subtitle="Open jobs posted by general contractors."
+      />
 
-      <div className="px-4 pt-4 space-y-4">
-        {/* Search bar (visual — full search can be added later) */}
-        <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 text-slate-400 text-sm">
-          🔍 &nbsp;Search projects...
-        </div>
-
-        {/* Filter chips */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
-          {FILTERS.map((f) => {
-            const value = f.toLowerCase();
-            const isActive = (typeFilter ?? "all") === value;
-            return (
-              <a
-                key={f}
-                href={`/browse${value !== "all" ? `?type=${value}` : ""}`}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                  isActive
-                    ? "bg-[#0F2B46] text-white"
-                    : "bg-white text-slate-500 border border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                {f}
-              </a>
-            );
-          })}
-        </div>
-
-        {/* Count + sort */}
-        <div className="flex items-center justify-between">
-          <p className="text-slate-400 text-sm font-semibold">
-            {projects?.length ?? 0} projects
-          </p>
-          <span className="text-amber-500 text-sm font-bold cursor-pointer">Sort ↕</span>
-        </div>
-
-        {/* Project list */}
-        {projects && projects.length > 0 ? (
-          <div className="space-y-3">
-            {projects.map((p) => <ProjectCard key={p.id} project={p} />)}
-          </div>
-        ) : (
-          <div className="text-center py-16">
-            <p className="text-3xl mb-3">🔍</p>
-            <p className="font-black text-slate-700">No projects found</p>
-            <p className="text-slate-400 text-sm mt-1">
-              {typeFilter && typeFilter !== "all"
-                ? `No ${typeFilter} projects right now. Try a different filter.`
-                : "Check back soon — new jobs are posted daily."}
-            </p>
-          </div>
-        )}
+      {/* Filter chips */}
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none mb-4">
+        {FILTERS.map((f) => {
+          const isActive = (typeFilter ?? "all") === f;
+          return (
+            <Link
+              key={f}
+              href={`/browse${f !== "all" ? `?type=${f}` : ""}`}
+              className={`chip capitalize shrink-0 transition-colors ${
+                isActive
+                  ? "bg-brand-600 text-white"
+                  : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              {f}
+            </Link>
+          );
+        })}
       </div>
 
-      <NavBar role={profile?.role ?? "ec"} />
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-slate-500">
+          {projects?.length ?? 0} {projects?.length === 1 ? "project" : "projects"}
+        </p>
+      </div>
+
+      {projects && projects.length > 0 ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((p) => <ProjectCard key={p.id} project={p} />)}
+        </div>
+      ) : (
+        <div className="card p-12 text-center">
+          <h3 className="font-semibold text-slate-900">No projects found</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            {typeFilter && typeFilter !== "all"
+              ? `No ${typeFilter} projects right now. Try a different filter.`
+              : "Check back soon — new jobs are posted daily."}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,7 +28,6 @@ export default function EditProfilePage() {
     specialties: [],
   });
 
-  // Load current profile on mount
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -102,134 +101,120 @@ export default function EditProfilePage() {
 
     setSuccess(true);
     setSaving(false);
-
-    // Redirect back to profile after short delay
     setTimeout(() => router.push("/profile"), 1200);
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-3xl animate-pulse mb-2">⚡</div>
-          <p className="text-slate-400 font-semibold text-sm">Loading profile...</p>
-        </div>
+      <div className="max-w-2xl mx-auto px-6 md:px-8 py-20 text-center text-sm text-slate-500">
+        Loading profile…
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Header */}
-      <header className="bg-[#0F2B46] px-4 py-4 flex items-center gap-3">
-        <button
-          onClick={() => router.push("/profile")}
-          className="text-slate-400 font-semibold text-sm"
-        >
-          ← Cancel
-        </button>
-        <span className="font-display font-black text-white text-lg">Edit Profile</span>
+    <div className="max-w-2xl mx-auto px-6 md:px-8 py-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <button
+            onClick={() => router.push("/profile")}
+            className="text-sm text-slate-500 hover:text-slate-900"
+          >
+            ← Back to profile
+          </button>
+          <h1 className="text-2xl font-semibold text-slate-900 mt-2">Edit profile</h1>
+          <p className="text-sm text-slate-500">Keep your details up to date for clients.</p>
+        </div>
         <button
           onClick={handleSave}
-          disabled={saving}
-          className="ml-auto bg-amber-400 text-[#0F2B46] font-black text-sm px-4 py-2 rounded-xl hover:bg-amber-300 transition-colors disabled:opacity-60"
+          disabled={saving || success}
+          className="btn btn-primary"
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? "Saving…" : success ? "Saved" : "Save"}
         </button>
-      </header>
+      </div>
 
-      <form onSubmit={handleSave} className="px-4 py-5 max-w-lg mx-auto space-y-5 pb-20">
+      <form onSubmit={handleSave} className="space-y-5">
 
-        {/* Success banner */}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm font-semibold text-center">
-            ✅ Profile saved! Redirecting...
+          <div className="card p-4 bg-green-50 border-green-100 text-sm text-green-700">
+            Profile saved. Redirecting…
           </div>
         )}
 
-        {/* Error banner */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <div className="card p-4 bg-red-50 border-red-100 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        {/* ── Personal Info ── */}
-        <div className="bg-white rounded-2xl p-5 space-y-4">
-          <p className="text-xs font-black text-slate-400 tracking-wide">PERSONAL INFO</p>
+        {/* Personal info */}
+        <section className="card p-6 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Personal info</p>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Full Name</label>
+          <Field label="Full name">
             <input
               type="text"
               value={form.fullName}
               onChange={(e) => update("fullName", e.target.value)}
               placeholder="Mike Thompson"
-              className={inputClass}
+              className="input"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Company Name</label>
+          <Field label="Company name">
             <input
               type="text"
               value={form.companyName}
               onChange={(e) => update("companyName", e.target.value)}
               placeholder="Mike's Electrical Services"
-              className={inputClass}
+              className="input"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">
-              Bio <span className="font-normal text-slate-400">(optional)</span>
-            </label>
+          <Field label="Bio" hint="Optional. A short intro for clients viewing your profile.">
             <textarea
               value={form.bio}
               onChange={(e) => update("bio", e.target.value)}
-              placeholder="Tell GCs a bit about your experience and what sets you apart..."
-              rows={3}
-              className={`${inputClass} resize-none`}
+              placeholder="Tell GCs a bit about your experience and what sets you apart…"
+              rows={4}
+              className="input resize-none"
             />
-          </div>
-        </div>
+          </Field>
+        </section>
 
-        {/* ── Business Info ── */}
-        <div className="bg-white rounded-2xl p-5 space-y-4">
-          <p className="text-xs font-black text-slate-400 tracking-wide">BUSINESS INFO</p>
+        {/* Business info */}
+        <section className="card p-6 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Business info</p>
 
           {role === "ec" && (
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                Electrician License #
-              </label>
+            <Field label="Electrician license #">
               <input
                 type="text"
                 value={form.licenseNumber}
                 onChange={(e) => update("licenseNumber", e.target.value)}
                 placeholder="e.g. NY-ELC-28491"
-                className={inputClass}
+                className="input"
               />
-            </div>
+            </Field>
           )}
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">
-              Primary Service Area
-            </label>
+          <Field label="Primary service area">
             <input
               type="text"
               value={form.location}
               onChange={(e) => update("location", e.target.value)}
               placeholder="e.g. Albany, NY"
-              className={inputClass}
+              className="input"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-3">
-              Service Radius: <span className="text-amber-500">{form.serviceRadius} miles</span>
-            </label>
+          <Field label={
+            <span>
+              Service radius
+              <span className="ml-2 text-brand-600 tabular-nums">{form.serviceRadius} miles</span>
+            </span>
+          }>
             <input
               type="range"
               min={10}
@@ -237,60 +222,71 @@ export default function EditProfilePage() {
               step={5}
               value={form.serviceRadius}
               onChange={(e) => update("serviceRadius", Number(e.target.value))}
-              className="w-full accent-amber-400"
+              className="w-full accent-brand-600"
             />
             <div className="flex justify-between text-xs text-slate-400 mt-1">
               <span>10 mi</span>
               <span>200 mi</span>
             </div>
-          </div>
-        </div>
+          </Field>
+        </section>
 
-        {/* ── Specialties (EC only) ── */}
+        {/* Specialties (EC only) */}
         {role === "ec" && (
-          <div className="bg-white rounded-2xl p-5">
-            <p className="text-xs font-black text-slate-400 tracking-wide mb-3">
-              SPECIALTIES
-              <span className="font-normal ml-1">({form.specialties.length} selected)</span>
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {SPECIALTIES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => toggleSpecialty(s)}
-                  className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${
-                    form.specialties.includes(s)
-                      ? "bg-blue-500 text-white border-blue-500"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+          <section className="card p-6">
+            <div className="flex items-baseline justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Specialties</p>
+              <p className="text-xs text-slate-500">{form.specialties.length} selected</p>
             </div>
-          </div>
+            <div className="flex flex-wrap gap-2">
+              {SPECIALTIES.map((s) => {
+                const active = form.specialties.includes(s);
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => toggleSpecialty(s)}
+                    className={`chip transition-colors ${
+                      active
+                        ? "bg-brand-600 text-white border border-brand-600 hover:bg-brand-700"
+                        : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         )}
 
-        {/* Save button */}
-        <button
-          type="submit"
-          disabled={saving || success}
-          className="w-full bg-amber-400 text-[#0F2B46] font-black py-4 rounded-2xl hover:bg-amber-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-base"
-        >
-          {saving ? "Saving..." : success ? "✅ Saved!" : "Save Profile"}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => router.push("/profile")}
-          className="w-full text-slate-400 font-semibold py-2 text-sm hover:text-slate-600"
-        >
-          Cancel
-        </button>
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => router.push("/profile")}
+            className="btn btn-secondary flex-1"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving || success}
+            className="btn btn-primary flex-[2]"
+          >
+            {saving ? "Saving…" : success ? "Saved" : "Save profile"}
+          </button>
+        </div>
       </form>
     </div>
   );
 }
 
-const inputClass = "w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-sm";
+function Field({ label, hint, children }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+      {children}
+      {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
+    </div>
+  );
+}

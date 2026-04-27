@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import Header from "@/components/ui/Header";
-import NavBar from "@/components/ui/NavBar";
+import PageHeader from "@/components/ui/PageHeader";
 
-const STATUS_CONFIG = {
-  submitted: { bg: "bg-blue-50",   text: "text-blue-600",  label: "Submitted", icon: "📤" },
-  winning:   { bg: "bg-green-50",  text: "text-green-600", label: "Winning",   icon: "🏆" },
-  outbid:    { bg: "bg-red-50",    text: "text-red-500",   label: "Outbid",    icon: "📉" },
-  awarded:   { bg: "bg-green-50",  text: "text-green-700", label: "Awarded!",  icon: "✅" },
-  declined:  { bg: "bg-slate-100", text: "text-slate-500", label: "Declined",  icon: "✗"  },
+const STATUS_CHIP = {
+  submitted: "bg-brand-50 text-brand-700",
+  winning:   "bg-green-50 text-green-700",
+  outbid:    "bg-red-50 text-red-700",
+  awarded:   "bg-green-100 text-green-800",
+  declined:  "bg-slate-100 text-slate-500",
 };
 
 export default async function MyBidsPage() {
@@ -21,150 +20,106 @@ export default async function MyBidsPage() {
     .from("bids")
     .select(`
       *,
-      project:projects (
-        id, title, location, budget_min, budget_max,
-        bid_deadline, project_type, status
-      )
+      project:projects (id, title, location, budget_min, budget_max, bid_deadline, project_type, status)
     `)
     .eq("ec_id", user.id)
     .order("created_at", { ascending: false });
 
-  const active   = bids?.filter(b => ["submitted", "winning"].includes(b.status)) ?? [];
-  const awarded  = bids?.filter(b => b.status === "awarded") ?? [];
-  const past     = bids?.filter(b => ["outbid", "declined"].includes(b.status)) ?? [];
+  const active  = bids?.filter(b => ["submitted", "winning"].includes(b.status)) ?? [];
+  const awarded = bids?.filter(b => b.status === "awarded") ?? [];
+  const past    = bids?.filter(b => ["outbid", "declined"].includes(b.status)) ?? [];
 
-  const winRate = bids?.length
-    ? Math.round((awarded.length / bids.length) * 100)
-    : 0;
+  const winRate = bids?.length ? Math.round((awarded.length / bids.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-28">
-      <Header title="My Bids" />
+    <div className="max-w-6xl mx-auto px-6 md:px-8 py-8">
+      <PageHeader
+        title="My bids"
+        subtitle="Every bid you've submitted across SparkBid projects."
+        action={<Link href="/browse" className="btn btn-primary">Browse projects</Link>}
+      />
 
-      <div className="px-4 pt-4 max-w-lg mx-auto space-y-5">
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Total Bids", value: bids?.length ?? 0,  color: "text-blue-500"  },
-            { label: "Active",     value: active.length,       color: "text-amber-500" },
-            { label: "Win Rate",   value: `${winRate}%`,       color: "text-green-600" },
-          ].map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-4 text-center">
-              <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-slate-400 font-semibold mt-0.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty state */}
-        {(!bids || bids.length === 0) && (
-          <div className="text-center py-16 bg-white rounded-2xl">
-            <p className="text-4xl mb-3">📋</p>
-            <p className="font-black text-slate-700">No bids yet</p>
-            <p className="text-slate-400 text-sm mt-1 mb-6">
-              Browse open projects and submit your first bid
-            </p>
-            <Link
-              href="/browse"
-              className="bg-amber-400 text-[#0F2B46] font-bold px-6 py-3 rounded-xl inline-block hover:bg-amber-300 transition-colors"
-            >
-              Browse Projects
-            </Link>
-          </div>
-        )}
-
-        {/* Active Bids */}
-        {active.length > 0 && (
-          <div>
-            <h3 className="font-black text-slate-800 mb-3">📤 Active Bids</h3>
-            <div className="space-y-3">
-              {active.map((bid) => <BidCard key={bid.id} bid={bid} />)}
-            </div>
-          </div>
-        )}
-
-        {/* Awarded */}
-        {awarded.length > 0 && (
-          <div>
-            <h3 className="font-black text-slate-800 mb-3">✅ Awarded Jobs</h3>
-            <div className="space-y-3">
-              {awarded.map((bid) => <BidCard key={bid.id} bid={bid} />)}
-            </div>
-          </div>
-        )}
-
-        {/* Past / Lost */}
-        {past.length > 0 && (
-          <div>
-            <h3 className="font-black text-slate-800 mb-3">📁 Past Bids</h3>
-            <div className="space-y-3">
-              {past.map((bid) => <BidCard key={bid.id} bid={bid} />)}
-            </div>
-          </div>
-        )}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <StatCard label="Total bids" value={bids?.length ?? 0} />
+        <StatCard label="Active"     value={active.length} />
+        <StatCard label="Win rate"   value={`${winRate}%`} />
       </div>
 
-      <NavBar role="ec" />
+      {(!bids || bids.length === 0) ? (
+        <div className="card p-12 text-center">
+          <h3 className="font-semibold text-slate-900">No bids yet</h3>
+          <p className="text-sm text-slate-500 mt-1 mb-6">Browse open projects and submit your first bid.</p>
+          <Link href="/browse" className="btn btn-primary">Browse projects</Link>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {active.length > 0 && (
+            <Section title="Active">
+              {active.map((bid) => <BidRow key={bid.id} bid={bid} />)}
+            </Section>
+          )}
+          {awarded.length > 0 && (
+            <Section title="Awarded">
+              {awarded.map((bid) => <BidRow key={bid.id} bid={bid} />)}
+            </Section>
+          )}
+          {past.length > 0 && (
+            <Section title="Past">
+              {past.map((bid) => <BidRow key={bid.id} bid={bid} />)}
+            </Section>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function BidCard({ bid }) {
-  const config = STATUS_CONFIG[bid.status] ?? STATUS_CONFIG.submitted;
-  const project = bid.project;
+function Section({ title, children }) {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-slate-900 mb-3">{title}</h2>
+      <div className="card divide-y divide-slate-100">{children}</div>
+    </div>
+  );
+}
 
+function BidRow({ bid }) {
+  const chipCls = STATUS_CHIP[bid.status] ?? "bg-slate-100 text-slate-600";
+  const project = bid.project;
   const budgetLabel = project?.budget_min && project?.budget_max
-    ? `$${(project.budget_min / 1000).toFixed(0)}K–$${(project.budget_max / 1000).toFixed(0)}K`
+    ? `$${(project.budget_min / 1000).toFixed(0)}k–$${(project.budget_max / 1000).toFixed(0)}k`
     : null;
 
   return (
-    <Link href={`/project/${project?.id}`}>
-      <div className="bg-white rounded-2xl p-4 hover:shadow-md transition-shadow">
-        <div className="flex items-start justify-between mb-1">
-          <h4 className="font-black text-slate-800 text-sm leading-tight flex-1 pr-3">
-            {project?.title ?? "Project"}
-          </h4>
-          <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-lg ${config.bg} ${config.text}`}>
-            {config.icon} {config.label}
-          </span>
+    <Link
+      href={`/project/${project?.id}`}
+      className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50 transition-colors"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-slate-900 truncate">{project?.title ?? "Project"}</p>
+          <span className={`chip capitalize ${chipCls}`}>{bid.status}</span>
         </div>
-
-        {project?.location && (
-          <p className="text-slate-400 text-xs mb-3">📍 {project.location}</p>
-        )}
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 font-semibold">YOUR BID</p>
-            <p className="font-black text-slate-800 text-lg">${bid.amount.toLocaleString()}</p>
-          </div>
-          {budgetLabel && (
-            <div className="text-right">
-              <p className="text-xs text-slate-400 font-semibold">BUDGET</p>
-              <p className="font-bold text-green-600 text-sm">{budgetLabel}</p>
-            </div>
-          )}
-        </div>
-
-        {/* AI data if present */}
-        {bid.ai_confidence && (
-          <div className="flex gap-2 mt-3">
-            <span className="text-xs bg-amber-50 text-amber-700 font-bold px-2 py-1 rounded-lg">
-              🤖 {bid.ai_confidence}% confident
-            </span>
-            {bid.strategy && (
-              <span className="text-xs bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-lg capitalize">
-                {bid.strategy}
-              </span>
-            )}
-          </div>
-        )}
-
-        <p className="text-xs text-slate-300 mt-2">
-          Submitted {new Date(bid.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+        <p className="text-xs text-slate-500 mt-0.5 truncate">
+          {project?.location ?? "—"}
+          {" · Submitted "}
+          {new Date(bid.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          {bid.strategy && ` · ${bid.strategy}`}
         </p>
       </div>
+      <div className="text-right shrink-0">
+        <p className="text-sm font-semibold text-slate-900 tabular-nums">${bid.amount.toLocaleString()}</p>
+        {budgetLabel && <p className="text-xs text-slate-500">budget {budgetLabel}</p>}
+      </div>
     </Link>
+  );
+}
+
+function StatCard({ label, value }) {
+  return (
+    <div className="card p-4">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="text-2xl font-bold tracking-tight text-slate-900 mt-1 tabular-nums">{value}</p>
+    </div>
   );
 }

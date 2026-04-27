@@ -1,37 +1,37 @@
 import Link from "next/link";
 
-const TYPE_COLORS = {
-  commercial:   { bg: "bg-blue-50",   text: "text-blue-600"  },
-  residential:  { bg: "bg-purple-50", text: "text-purple-600"},
-  industrial:   { bg: "bg-red-50",    text: "text-red-600"   },
-  institutional:{ bg: "bg-teal-50",   text: "text-teal-600"  },
-  urgent:       { bg: "bg-red-50",    text: "text-red-600"   },
+const TYPE_CHIP = {
+  commercial:    "bg-brand-50 text-brand-700",
+  residential:   "bg-purple-50 text-purple-700",
+  industrial:    "bg-red-50 text-red-700",
+  institutional: "bg-teal-50 text-teal-700",
 };
 
 export default function ProjectCard({ project }) {
-  const colors = TYPE_COLORS[project.project_type] ?? TYPE_COLORS.commercial;
+  const chip = TYPE_CHIP[project.project_type] ?? TYPE_CHIP.commercial;
   const budgetLabel = project.budget_min && project.budget_max
-    ? `$${(project.budget_min / 1000).toFixed(0)}K–$${(project.budget_max / 1000).toFixed(0)}K`
+    ? `$${(project.budget_min / 1000).toFixed(0)}k–$${(project.budget_max / 1000).toFixed(0)}k`
     : "Budget TBD";
 
   return (
-    <Link href={`/project/${project.id}`}>
-      <div className="bg-white rounded-2xl border border-slate-100 p-4 hover:shadow-md transition-shadow">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-black text-slate-800 text-base leading-tight flex-1 pr-2">
-            {project.title}
-          </h3>
-          <span className={`text-xs font-bold px-2 py-1 rounded-lg capitalize shrink-0 ${colors.bg} ${colors.text}`}>
-            {project.project_type}
-          </span>
-        </div>
-        <p className="text-slate-400 text-xs mb-3">📍 {project.location}</p>
-        <div className="flex items-end justify-between">
-          <span className="text-green-600 font-black text-xl">{budgetLabel}</span>
-          <span className="text-slate-400 text-xs">
-            {project.bid_count ?? 0} bids
-          </span>
-        </div>
+    <Link
+      href={`/project/${project.id}`}
+      className="card p-5 hover:shadow-pop transition-shadow block"
+    >
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <h3 className="font-semibold text-slate-900 leading-snug min-w-0 flex-1 truncate">
+          {project.title}
+        </h3>
+        <span className={`chip capitalize shrink-0 ${chip}`}>
+          {project.project_type}
+        </span>
+      </div>
+      <p className="text-xs text-slate-500 mb-4 truncate">{project.location}</p>
+      <div className="flex items-end justify-between">
+        <span className="text-lg font-semibold text-slate-900 tabular-nums">{budgetLabel}</span>
+        <span className="text-xs text-slate-500">
+          {project.bid_count ?? 0} bids
+        </span>
       </div>
     </Link>
   );
